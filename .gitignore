@@ -4,3 +4,7 @@ venv/
 __pycache__/
 node_modules/
 ~$*.xlsx
+
+# Not part of the build
+HOV_Recommendation_Product_Matrix.xlsx
+.tools/
