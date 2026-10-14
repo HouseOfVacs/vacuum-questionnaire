@@ -1,0 +1,8 @@
+Setting,Value,Meaning
+Good/Better price line,800,Picks under this price are Good
+Better/Best price line,1000,Picks at or above this price are Best
+Minimum fit score,3,Models scoring below this are not shown
+Tie window,0.1,Scores this close count as a tie; house boost decides
+Caution penalty,0.3,Subtracted per Caution flag that applies
+HEPA allergy bonus,0.2,Added when allergies = Yes and HEPA = Yes
+Q10 minimum ease,4,Ease rating required when the shopper has trouble lifting or pushing
