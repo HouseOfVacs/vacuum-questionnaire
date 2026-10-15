@@ -27,6 +27,7 @@ const CASES = [
   ["missing setting", edit("settings", /Tie window,[^\n]*\n/, ""), "\"Tie window\" row is missing"],
   ["price lines reversed", edit("settings", "Better/Best price line,1000", "Better/Best price line,700"), "must be higher than the Good/Better price line"],
   ["renamed column", edit("models", "Carpet,Bare floor", "Carpets,Bare floor"), "Models tab: missing column \"Carpet\""],
+  ["duplicate column name", edit("models", "ID,Brand,", "ID,Image URL,Brand,"), "Models tab: 2 columns are named \"Image URL\" (columns B and G)"],
   ["not a CSV (sign-in page)", { ...texts, settings: "<!DOCTYPE html><html>" }, "Settings tab: missing columns"],
 ];
 for (const [name, broken, want] of CASES) {

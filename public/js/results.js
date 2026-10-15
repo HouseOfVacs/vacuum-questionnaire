@@ -7,9 +7,9 @@ const money = p => "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, m
 const joinAnd = xs => (xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 const lower = s => s.replace(/\s*\(.*?\)\s*/g, " ").trim().toLowerCase();
 
-// Plain-words notes for a Caution flag that applies and no add-on fixes. Wording for Matt to review.
+// Plain-words notes for a Caution flag that applies and no add-on fixes. Shag wording corrected by Matt, Oct 15, 2026.
 const CAUTIONS = {
-  shag: "Use the lowest height setting on shag.",
+  shag: "Use the highest height setting on shag.",
   wool: "Go gently on wool and hand-sewn rugs. Ask us which setting to use.",
   looped: "Watch for snagged loops on berber. Ask us which setting to use.",
 };

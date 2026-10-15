@@ -214,7 +214,7 @@ Each recommendation is a card that sells the fit, links straight to the store, a
 - The slot label (Good, Better, Best, Top pick, Also great, or Corded alternative), plus the Best match and Owner's Pick badges where they apply.
 - Product photo, model name and price.
 - **Why it fits:** one or two lines built from the ratings that carried the most weight for this shopper. An example: "Strong on carpet and pet hair, with a parquet brush for your hardwood." The Blurb column overrides it.
-- Any Caution note in plain words, such as "Use the lowest height setting on shag."
+- Any Caution note in plain words, such as "Use the highest height setting on shag."
 - Any add-on as its own line with a link, such as "Add the Kombi Floor Nozzle for your wool rugs." An add-on with no store link says "Ask us."
 - **Buy** button: opens the store page in the same window.
 - **Email us about this model:** opens the shopper's email app to hov@thehouseofvacs.com. The subject is "Question about the {model}" and the body is prefilled with their answers.

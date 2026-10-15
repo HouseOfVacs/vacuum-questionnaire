@@ -32,6 +32,10 @@
     th, td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; }
     th { font-weight: 600; color: var(--muted); border-top: 0; white-space: nowrap; }
     td:nth-child(2) { min-width: 10em; }
+    .model-cell { display: flex; gap: 8px; align-items: flex-start; }
+    .model-cell img { flex: none; width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 4px; }
+    .no-photo { flex: none; width: 44px; height: 44px; display: grid; place-items: center; font-size: .65rem; text-align: center;
+                line-height: 1.1; color: var(--muted); background: #f1ead9; border-radius: 4px; }
     td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .badge { display: inline-block; font-size: .75rem; padding: 1px 6px; border-radius: 4px; background: #f1ead9; margin: 2px 4px 0 0; }
     .problems { margin: 10px 0 0; padding: 8px 12px 8px 28px; background: var(--fail-bg); color: var(--fail); border-radius: 6px; font-size: .88rem; }
@@ -64,7 +68,7 @@
     const badges = [p.best_match && "★ Best match", p.pick && "Owner's Pick"].filter(Boolean)
       .map(b => `<span class="badge">${esc(b)}</span>`).join("");
     const notes = [...p.addons.map(x => "+ " + x.name + (x.url ? "" : " (Ask us)")), ...p.cautions.map(c => "caution: " + c)];
-    return `<tr><td>${esc(p.slot)}</td><td>${esc(p.name)}<br>${badges}</td><td class="num">${money(p.price)}</td>
+    return `<tr><td>${esc(p.slot)}</td><td class="model-cell">${p.image ? `<img src="${esc(p.image)}" alt="" width="44" height="44" loading="lazy">` : `<span class="no-photo" title="No Image URL in the sheet">no photo</span>`}<div>${esc(p.name)}<br>${badges}</div></td><td class="num">${money(p.price)}</td>
       <td class="num">${p.score.toFixed(2)}</td><td>${notes.map(esc).join("<br>")}</td></tr>`;
   }
 

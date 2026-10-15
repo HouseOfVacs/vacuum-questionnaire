@@ -110,6 +110,7 @@ const FLAG_VALUES = ["OK", "Caution", "Avoid"];
 const isLink = v => /^https?:\/\/\S+$/.test(v);
 const isNum = v => v !== "" && Number.isFinite(num(v));
 const show = v => (v === "" ? "blank" : `"${v}"`);
+const joinList = xs => (xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 
 /**
  * Check every row of the three tabs. Returns {errors, notes}.
@@ -125,6 +126,15 @@ export function validateCatalog(texts) {
     if (gone.length) errors.push(`${TABS[key]} tab: missing column${gone.length > 1 ? "s" : ""} ${gone.map(c => `"${c}"`).join(", ")}`);
     return gone.length > 0;
   };
+  // Two columns with the same name: only the last one would be read, so the other is silently ignored.
+  const letter = i => (i >= 26 ? letter(Math.floor(i / 26) - 1) : "") + String.fromCharCode(65 + (i % 26));
+  for (const key of Object.keys(tabs)) {
+    const cols = tabs[key].columns;
+    for (const name of new Set(cols.filter((c, i) => c && cols.indexOf(c) !== i))) {
+      const at = cols.map((c, i) => (c === name ? letter(i) : null)).filter(Boolean);
+      errors.push(`${TABS[key]} tab: ${at.length} columns are named "${name}" (columns ${joinList(at)}). Delete the one you don't need.`);
+    }
+  }
   const badModels = missing("models", MODEL_COLUMNS);
   const badAddons = missing("addons", ADDON_COLUMNS);
   const badSettings = missing("settings", SETTING_COLUMNS);
