@@ -68,5 +68,5 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 3. **Catalog from the Google Sheet** ✓
 4. **Question screens** ✓
 5. **Results page** ✓
-6. **Lead capture** ← current
+6. **Lead capture** ✓
 7. Embed and launch
