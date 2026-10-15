@@ -382,10 +382,14 @@ function scrollToTop() {
 if (embedded) {
   document.documentElement.classList.add("embedded");
   let lastHeight = 0;
-  new ResizeObserver(() => {
+  const sendHeight = force => {
     const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
-    if (height !== lastHeight) toParent({ type: "height", height: (lastHeight = height) });
-  }).observe(document.documentElement);
+    if (force || height !== lastHeight) toParent({ type: "height", height: (lastHeight = height) });
+  };
+  new ResizeObserver(() => sendHeight(false)).observe(document.documentElement);
+  // Squarespace runs Code Block scripts late, so the page may not be listening yet when the first height goes out.
+  // Repeat it every second; setting the same height again costs the page nothing.
+  setInterval(() => sendHeight(true), 1000);
 }
 
 render();
