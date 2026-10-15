@@ -13,6 +13,10 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | `docs/` | The build spec. |
 | `reference/` | The approved Python prototype of the recommendation logic and the starter catalog workbook. |
 | `scripts/export_catalog.py` | Regenerates `public/data/*.csv` from the workbook. |
+| `public/index.html`, `public/js/app.js` | The questionnaire: one question per screen, progress bar, Back, answers saved in the browser. |
+| `public/js/questions.js` | The 13 screens, their options, skip rules, and how answers map to the engine. Edit here to reword a question. |
+| `public/css/theme.css` | The site's colors and fonts as CSS variables (taken from thehouseofvacs.com). |
+| `public/css/app.css` | Questionnaire layout, mobile first. |
 | `public/js/engine.js` | The recommendation engine, ported line for line from the prototype. |
 | `public/js/catalog.js` | Loads the catalog from the Google Sheet, validates every row, and falls back to the repo copy on any problem. |
 | `public/js/sheet-config.js` | The Google Sheet's ID and tab names. The sheet must be shared as "Anyone with the link: Viewer". |
@@ -57,7 +61,7 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 1. **Set up** — repo, hosting, blank page live. ✓
 2. **Recommendation engine** + `/test.html` ✓
 3. **Catalog from the Google Sheet** ✓
-4. Question screens
+4. **Question screens** ← current
 5. Results page
 6. Lead capture
 7. Embed and launch

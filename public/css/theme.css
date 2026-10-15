@@ -1,0 +1,35 @@
+/* Site look for thehouseofvacs.com, taken from the live site's computed styles (Oct 14, 2026,
+   the #recs "Personalized Recommendations Form" lightbox). Change colors and fonts here only.
+   The site loads these typefaces from an Adobe Fonts kit locked to its domain; the same families
+   come from Google Fonts here (see the <link> in index.html). */
+:root {
+  /* colors */
+  --ink: #1e2f3e;                          /* body and heading text */
+  --ink-soft: rgba(30, 47, 62, 0.72);      /* helper text */
+  --page: #f9f6f1;                         /* form background (warm off-white) */
+  --section: #e2d0ca;                      /* homepage section background (dusty rose) */
+  --pill: rgba(226, 208, 202, 0.8);        /* answer pill / input fill (taupe) */
+  --pill-hover: rgba(226, 208, 202, 1);
+  --pill-border: rgba(30, 47, 62, 0.55);
+  --plum: #52414c;                         /* primary button */
+  --plum-dark: #3f3139;
+  --on-plum: #ffffff;
+  --selected: var(--plum);                 /* selected pill: clear contrast change (spec) */
+  --on-selected: #ffffff;
+  --error: #a3312b;
+  --focus: #2f6f9f;
+
+  /* type */
+  --font-heading: "Noto Serif", Georgia, serif;
+  --font-body: "Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-button: "Raleway", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --heading-weight: 500;
+  --button-weight: 600;
+  --button-tracking: 0.1em;
+  --button-case: lowercase;
+
+  /* shape */
+  --radius-pill: 10px;
+  --radius-button: 0.4rem;
+  --radius-input: 10px;
+}
