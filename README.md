@@ -69,4 +69,4 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 4. **Question screens** ✓
 5. **Results page** ✓
 6. **Lead capture** ✓
-7. **Embed and launch** ← current: see `docs/launch-checklist.md`
+7. **Embed and launch** ✓ (live at thehouseofvacs.com/vacuum-questionnaire; see `docs/launch-checklist.md`)
