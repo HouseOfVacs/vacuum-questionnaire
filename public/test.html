@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Questionnaire Test Households</title>
+  <style>
+    :root { --bg: #fbf8f3; --card: #fff; --ink: #2b2b2b; --muted: #6b665f; --line: #e6e0d6;
+            --pass: #1f7a3f; --pass-bg: #e6f4ea; --fail: #b3261e; --fail-bg: #fce8e6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--ink);
+           font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 920px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    h2 { font-size: 1.05rem; margin: 0; }
+    .muted { color: var(--muted); }
+    .banner { margin: 16px 0; padding: 14px 16px; border-radius: 10px; font-weight: 600; font-size: 1.1rem; }
+    .banner.pass { background: var(--pass-bg); color: var(--pass); }
+    .banner.fail { background: var(--fail-bg); color: var(--fail); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+    .head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+    .tag { font-size: .8rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .tag.pass { background: var(--pass-bg); color: var(--pass); }
+    .tag.fail { background: var(--fail-bg); color: var(--fail); }
+    .summary { font-size: .88rem; margin: 6px 0 10px; }
+    .scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+    th, td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+    th { font-weight: 600; color: var(--muted); border-top: 0; white-space: nowrap; }
+    td:nth-child(2) { min-width: 10em; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .badge { display: inline-block; font-size: .75rem; padding: 1px 6px; border-radius: 4px; background: #f1ead9; margin: 2px 4px 0 0; }
+    .problems { margin: 10px 0 0; padding: 8px 12px 8px 28px; background: var(--fail-bg); color: var(--fail); border-radius: 6px; font-size: .88rem; }
+    details { margin-top: 10px; font-size: .88rem; }
+    summary { cursor: pointer; color: var(--muted); }
+    details table { margin-top: 6px; }
+    .settings { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .88rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Test households</h1>
+  <p class="muted">Runs the seven households Matt approved on Oct 14, 2026 through the recommendation engine and checks every pick, fit score, badge and add-on.</p>
+  <div id="banner" class="banner">Running…</div>
+  <div id="catalog" class="card"></div>
+  <div id="results"></div>
+</main>
+
+<script type="module">
+  import { loadRepoCatalog } from "./js/catalog.js";
+  import { recommend } from "./js/engine.js";
+  import { HOUSEHOLDS, check } from "./js/households.js";
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const money = p => "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const $ = id => document.getElementById(id);
+
+  function pickRow(p) {
+    const badges = [p.best_match && "★ Best match", p.pick && "Owner's Pick"].filter(Boolean)
+      .map(b => `<span class="badge">${esc(b)}</span>`).join("");
+    const notes = [...p.addons.map(x => "+ " + x.name + (x.url ? "" : " (Ask us)")), ...p.cautions.map(c => "caution: " + c)];
+    return `<tr><td>${esc(p.slot)}</td><td>${esc(p.name)}<br>${badges}</td><td class="num">${money(p.price)}</td>
+      <td class="num">${p.score.toFixed(2)}</td><td>${notes.map(esc).join("<br>")}</td></tr>`;
+  }
+
+  try {
+    const catalog = await loadRepoCatalog();
+    const s = catalog.settings;
+    $("catalog").innerHTML = `<div class="head"><h2>Catalog</h2><span class="muted">Repo copy (data/*.csv)</span></div>
+      <p class="summary">${catalog.models.length} active models · ${new Set(Object.values(catalog.addons).flatMap(o => Object.values(o))).size} add-ons</p>
+      <div class="settings">
+        <span>Good &lt; ${money(s.goodMax)}</span><span>Best ≥ ${money(s.betterMax)}</span><span>Min fit ${s.minFit}</span>
+        <span>Tie window ${s.tieWindow}</span><span>Caution −${s.cautionPenalty}</span><span>HEPA +${s.hepaBonus}</span>
+        <span>Screen 10 min ease ${s.limitMinEase}</span></div>`;
+
+    let passed = 0;
+    $("results").innerHTML = HOUSEHOLDS.map(h => {
+      const res = recommend(catalog, h.answers);
+      const problems = check(res, h.expected);
+      if (!problems.length) passed++;
+      const ok = !problems.length;
+      return `<section class="card">
+        <div class="head"><h2>${esc(h.name)}</h2><span class="tag ${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</span></div>
+        <p class="summary muted">${esc(h.summary)}</p>
+        ${res.fallback ? `<p><strong>Fallback:</strong> this one's worth a conversation</p>` : ""}
+        <div class="scroll"><table><thead><tr><th>Slot</th><th>Model</th><th>Price</th><th>Fit</th><th>Add-ons / cautions</th></tr></thead>
+        <tbody>${res.picks.map(pickRow).join("")}</tbody></table></div>
+        ${ok ? "" : `<ul class="problems">${problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`}
+        <details><summary>All ${res.pool.length} models that fit (fit ≥ ${s.minFit})</summary>
+          <div class="scroll"><table><thead><tr><th>Model</th><th>Price</th><th>Fit</th><th>Boost</th></tr></thead><tbody>
+          ${res.pool.map(m => `<tr><td>${esc(m.name)}</td><td class="num">${money(m.price)}</td><td class="num">${m.score.toFixed(2)}</td><td class="num">${m.boost}</td></tr>`).join("")}
+          </tbody></table></div></details>
+      </section>`;
+    }).join("");
+
+    const all = passed === HOUSEHOLDS.length;
+    $("banner").className = "banner " + (all ? "pass" : "fail");
+    $("banner").textContent = `${passed} of ${HOUSEHOLDS.length} households pass` + (all ? " ✓" : "");
+  } catch (err) {
+    $("banner").className = "banner fail";
+    $("banner").textContent = "Could not run the tests: " + err.message;
+    console.error(err);
+  }
+</script>
+</body>
+</html>

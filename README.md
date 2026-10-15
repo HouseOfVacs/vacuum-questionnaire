@@ -13,6 +13,11 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | `docs/` | The build spec. |
 | `reference/` | The approved Python prototype of the recommendation logic and the starter catalog workbook. |
 | `scripts/export_catalog.py` | Regenerates `public/data/*.csv` from the workbook. |
+| `public/js/engine.js` | The recommendation engine, ported line for line from the prototype. |
+| `public/js/catalog.js` | Reads the catalog CSVs into the data the engine uses. |
+| `public/js/households.js` | The seven approved test households and their expected results. |
+| `public/test.html` | Runs the seven households in the browser and shows pass or fail. |
+| `tests/run-tests.mjs` | The same check from the command line. CI runs it before every deploy, so a failing household blocks the deploy. |
 
 ## Updating the fallback catalog
 
@@ -20,6 +25,20 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 python3 -m pip install openpyxl
 python3 scripts/export_catalog.py
 ```
+
+## Running the tests
+
+```bash
+node tests/run-tests.mjs
+```
+
+Or serve the site locally and open http://localhost:8787/test.html:
+
+```bash
+python3 -m http.server 8787 --directory public
+```
+
+Live: https://houseofvacs.github.io/vacuum-questionnaire/test.html
 
 ## Running the reference prototype
 
@@ -31,8 +50,8 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 
 ## Build phases
 
-1. **Set up** — repo, hosting, blank page live. ← current
-2. Recommendation engine + `/test.html`
+1. **Set up** — repo, hosting, blank page live. ✓
+2. **Recommendation engine** + `/test.html` ✓
 3. Catalog from the Google Sheet
 4. Question screens
 5. Results page
