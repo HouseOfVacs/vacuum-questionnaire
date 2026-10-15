@@ -14,17 +14,21 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | `reference/` | The approved Python prototype of the recommendation logic and the starter catalog workbook. |
 | `scripts/export_catalog.py` | Regenerates `public/data/*.csv` from the workbook. |
 | `public/js/engine.js` | The recommendation engine, ported line for line from the prototype. |
-| `public/js/catalog.js` | Reads the catalog CSVs into the data the engine uses. |
+| `public/js/catalog.js` | Loads the catalog from the published Google Sheet, validates every row, and falls back to the repo copy on any problem. |
+| `public/js/sheet-config.js` | The published sheet's ID and tab IDs. |
 | `public/js/households.js` | The seven approved test households and their expected results. |
 | `public/test.html` | Runs the seven households in the browser and shows pass or fail. |
 | `tests/run-tests.mjs` | The same check from the command line. CI runs it before every deploy, so a failing household blocks the deploy. |
 
 ## Updating the fallback catalog
 
+The live catalog is the Google Sheet. After Matt approves a catalog change, refresh the repo copy from the sheet, run the tests, and commit:
+
 ```bash
-python3 -m pip install openpyxl
-python3 scripts/export_catalog.py
+node scripts/pull-sheet.mjs
 ```
+
+`scripts/export_catalog.py` rebuilds the CSVs from the original workbook instead (needs `pip install openpyxl`).
 
 ## Running the tests
 
@@ -52,7 +56,7 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 
 1. **Set up** — repo, hosting, blank page live. ✓
 2. **Recommendation engine** + `/test.html` ✓
-3. Catalog from the Google Sheet
+3. **Catalog from the Google Sheet** ← current
 4. Question screens
 5. Results page
 6. Lead capture

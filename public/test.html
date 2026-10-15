@@ -23,6 +23,9 @@
     .tag { font-size: .8rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
     .tag.pass { background: var(--pass-bg); color: var(--pass); }
     .tag.fail { background: var(--fail-bg); color: var(--fail); }
+    .tag.neutral { background: #f1ead9; color: var(--muted); }
+    .notes { margin: 6px 0 10px; padding-left: 20px; font-size: .88rem; color: var(--muted); }
+    a { color: inherit; }
     .summary { font-size: .88rem; margin: 6px 0 10px; }
     .scroll { overflow-x: auto; }
     table { border-collapse: collapse; width: 100%; font-size: .9rem; }
@@ -41,14 +44,15 @@
 <body>
 <main>
   <h1>Test households</h1>
-  <p class="muted">Runs the seven households Matt approved on Oct 14, 2026 through the recommendation engine and checks every pick, fit score, badge and add-on.</p>
+  <p class="muted">Runs the seven households Matt approved on Oct 14, 2026 through the recommendation engine and checks every pick, fit score, badge and add-on. Catalog changes in the Google Sheet show up here within about 5 minutes.</p>
   <div id="banner" class="banner">Running…</div>
   <div id="catalog" class="card"></div>
   <div id="results"></div>
 </main>
 
 <script type="module">
-  import { loadRepoCatalog } from "./js/catalog.js";
+  import { loadCatalog } from "./js/catalog.js";
+  import { SHEET } from "./js/sheet-config.js";
   import { recommend } from "./js/engine.js";
   import { HOUSEHOLDS, check } from "./js/households.js";
 
@@ -65,14 +69,25 @@
   }
 
   try {
-    const catalog = await loadRepoCatalog();
+    const forceRepo = new URLSearchParams(location.search).get("source") === "repo";
+    const { catalog, source, sheetProblems, errors, notes } = await loadCatalog({ source: forceRepo ? "repo" : undefined });
     const s = catalog.settings;
-    $("catalog").innerHTML = `<div class="head"><h2>Catalog</h2><span class="muted">Repo copy (data/*.csv)</span></div>
-      <p class="summary">${catalog.models.length} active models · ${new Set(Object.values(catalog.addons).flatMap(o => Object.values(o))).size} add-ons</p>
+    const list = (items, cls) => items.length ? `<ul class="${cls}">${items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+    const sourceLine = source === "sheet"
+      ? `Google Sheet · loaded ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`
+      : !SHEET.publishId ? "Repo copy (data/*.csv) · no Google Sheet set up yet"
+      : forceRepo ? "Repo copy (data/*.csv) · forced with ?source=repo"
+      : "Repo copy (data/*.csv) · the Google Sheet wasn't used";
+    $("catalog").innerHTML = `<div class="head"><h2>Catalog</h2><span class="tag ${source === "sheet" ? "pass" : sheetProblems.length ? "fail" : "neutral"}">${source === "sheet" ? "SHEET" : "REPO COPY"}</span></div>
+      <p class="summary">${esc(sourceLine)}<br>${catalog.models.length} active models · ${new Set(Object.values(catalog.addons).flatMap(o => Object.values(o))).size} add-ons</p>
+      ${sheetProblems.length ? `<p class="summary"><strong>Fix these in the Google Sheet</strong> (until then the questionnaire uses the repo copy):</p>${list(sheetProblems, "problems")}` : ""}
+      ${errors.length ? `<p class="summary"><strong>The repo copy has problems too:</strong></p>${list(errors, "problems")}` : ""}
+      ${notes.length ? list(notes, "notes") : ""}
       <div class="settings">
         <span>Good &lt; ${money(s.goodMax)}</span><span>Best ≥ ${money(s.betterMax)}</span><span>Min fit ${s.minFit}</span>
         <span>Tie window ${s.tieWindow}</span><span>Caution −${s.cautionPenalty}</span><span>HEPA +${s.hepaBonus}</span>
-        <span>Screen 10 min ease ${s.limitMinEase}</span></div>`;
+        <span>Screen 10 min ease ${s.limitMinEase}</span></div>
+      <p class="summary muted">${SHEET.publishId ? (forceRepo ? `<a href="?">Use the Google Sheet</a>` : `<a href="?source=repo">Compare with the repo copy</a>`) : ""}</p>`;
 
     let passed = 0;
     $("results").innerHTML = HOUSEHOLDS.map(h => {
