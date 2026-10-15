@@ -1,5 +1,5 @@
 // Turns the catalog (Models, Add-ons, Settings tabs) into the data the engine uses.
-// Reads the published Google Sheet, validates every row, and falls back to the repo copy
+// Reads the Google Sheet, validates every row, and falls back to the repo copy
 // (public/data/*.csv) if the sheet can't be reached or anything fails validation.
 // buildCatalog() mirrors load() in reference/engine_prototype.py.
 
@@ -219,12 +219,15 @@ async function fetchText(url) {
   }
 }
 
-export const sheetTabUrl = (sheet, gid) =>
-  `https://docs.google.com/spreadsheets/d/e/${sheet.publishId}/pub?gid=${gid}&single=true&output=csv`;
+// Google's query endpoint returns a tab as CSV and allows cross-site reads. headers=1 keeps it from
+// guessing how many header rows there are. It also guesses each column's type, so text typed into a
+// number column comes back blank; validation then reports that cell as blank.
+export const sheetTabUrl = (sheet, tab) =>
+  `https://docs.google.com/spreadsheets/d/${sheet.id}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(tab)}`;
 
 export async function fetchSheetTexts(sheet = SHEET) {
   const entries = await Promise.all(Object.keys(TABS).map(async k => {
-    try { return [k, await fetchText(sheetTabUrl(sheet, sheet.gids[k]))]; }
+    try { return [k, await fetchText(sheetTabUrl(sheet, sheet.tabs[k]))]; }
     catch (e) { throw new Error(`${TABS[k]} tab: ${e.message}`); }
   }));
   return Object.fromEntries(entries);
@@ -245,7 +248,7 @@ async function fetchRepoTexts(base) {
  */
 export async function loadCatalog({ source, base = "data/" } = {}) {
   const sheetProblems = [];
-  if (source !== "repo" && SHEET.publishId) {
+  if (source !== "repo" && SHEET.id) {
     try {
       const texts = await fetchSheetTexts();
       const { errors, notes } = validateCatalog(texts);

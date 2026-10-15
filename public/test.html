@@ -44,7 +44,7 @@
 <body>
 <main>
   <h1>Test households</h1>
-  <p class="muted">Runs the seven households Matt approved on Oct 14, 2026 through the recommendation engine and checks every pick, fit score, badge and add-on. Catalog changes in the Google Sheet show up here within about 5 minutes.</p>
+  <p class="muted">Runs the seven households Matt approved on Oct 14, 2026 through the recommendation engine and checks every pick, fit score, badge and add-on. Catalog changes in the Google Sheet show up here when you reload the page.</p>
   <div id="banner" class="banner">Running…</div>
   <div id="catalog" class="card"></div>
   <div id="results"></div>
@@ -74,12 +74,12 @@
     const s = catalog.settings;
     const list = (items, cls) => items.length ? `<ul class="${cls}">${items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
     const sourceLine = source === "sheet"
-      ? `Google Sheet · loaded ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`
-      : !SHEET.publishId ? "Repo copy (data/*.csv) · no Google Sheet set up yet"
+      ? `<a href="https://docs.google.com/spreadsheets/d/${SHEET.id}/edit" target="_blank" rel="noopener">Google Sheet</a> · loaded ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`
+      : !SHEET.id ? "Repo copy (data/*.csv) · no Google Sheet set up yet"
       : forceRepo ? "Repo copy (data/*.csv) · forced with ?source=repo"
       : "Repo copy (data/*.csv) · the Google Sheet wasn't used";
     $("catalog").innerHTML = `<div class="head"><h2>Catalog</h2><span class="tag ${source === "sheet" ? "pass" : sheetProblems.length ? "fail" : "neutral"}">${source === "sheet" ? "SHEET" : "REPO COPY"}</span></div>
-      <p class="summary">${esc(sourceLine)}<br>${catalog.models.length} active models · ${new Set(Object.values(catalog.addons).flatMap(o => Object.values(o))).size} add-ons</p>
+      <p class="summary">${sourceLine}<br>${catalog.models.length} active models · ${new Set(Object.values(catalog.addons).flatMap(o => Object.values(o))).size} add-ons</p>
       ${sheetProblems.length ? `<p class="summary"><strong>Fix these in the Google Sheet</strong> (until then the questionnaire uses the repo copy):</p>${list(sheetProblems, "problems")}` : ""}
       ${errors.length ? `<p class="summary"><strong>The repo copy has problems too:</strong></p>${list(errors, "problems")}` : ""}
       ${notes.length ? list(notes, "notes") : ""}
@@ -87,7 +87,7 @@
         <span>Good &lt; ${money(s.goodMax)}</span><span>Best ≥ ${money(s.betterMax)}</span><span>Min fit ${s.minFit}</span>
         <span>Tie window ${s.tieWindow}</span><span>Caution −${s.cautionPenalty}</span><span>HEPA +${s.hepaBonus}</span>
         <span>Screen 10 min ease ${s.limitMinEase}</span></div>
-      <p class="summary muted">${SHEET.publishId ? (forceRepo ? `<a href="?">Use the Google Sheet</a>` : `<a href="?source=repo">Compare with the repo copy</a>`) : ""}</p>`;
+      <p class="summary muted">${SHEET.id ? (forceRepo ? `<a href="?">Use the Google Sheet</a>` : `<a href="?source=repo">Compare with the repo copy</a>`) : ""}</p>`;
 
     let passed = 0;
     $("results").innerHTML = HOUSEHOLDS.map(h => {

@@ -1,4 +1,4 @@
-// Refreshes the repo copy of the catalog (public/data/*.csv) from the published Google Sheet.
+// Refreshes the repo copy of the catalog (public/data/*.csv) from the Google Sheet.
 // Run after Matt approves catalog changes, then run the tests and commit:
 //   node scripts/pull-sheet.mjs && node tests/run-tests.mjs
 // Writes nothing if the sheet fails validation.
@@ -6,7 +6,7 @@ import { writeFileSync } from "node:fs";
 import { fetchSheetTexts, validateCatalog } from "../public/js/catalog.js";
 import { SHEET } from "../public/js/sheet-config.js";
 
-if (!SHEET.publishId) {
+if (!SHEET.id) {
   console.error("No Google Sheet set up in public/js/sheet-config.js");
   process.exit(1);
 }
