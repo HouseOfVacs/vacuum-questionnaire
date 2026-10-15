@@ -3,7 +3,7 @@ import { BLANK_ANSWERS, HEARD_OTHER, SCREENS, toEngineAnswers, visibleScreens } 
 import { loadCatalog } from "./catalog.js";
 import { recommend } from "./engine.js";
 import { resultsHTML } from "./results.js";
-import { canEmailResults } from "./lead.js";
+import { canEmailResults, leadPayload, newLeadId, sendLead } from "./lead.js";
 import { HOUSEHOLDS } from "./households.js";
 
 const STORE_KEY = "hov-questionnaire-v1";
@@ -20,6 +20,8 @@ let state = preview
   ? { answers: { ...structuredClone(BLANK_ANSWERS), ...structuredClone(preview.answers) }, screen: RESULTS }
   : restore();
 let catalogPromise = null;
+let lastResult = null;        // {res, source} of the results on screen, for lead capture
+let honeypot = "";            // hidden "website" field on the last screen; only bots fill it in
 
 // ---------- saved answers ----------
 
@@ -30,7 +32,7 @@ function restore() {
     if (!saved || typeof saved.answers !== "object") return fresh;
     const answers = { ...structuredClone(BLANK_ANSWERS), ...saved.answers };
     const ok = saved.screen === RESULTS || visibleScreens(answers).some(s => s.id === saved.screen);
-    return { answers, screen: ok ? saved.screen : SCREENS[0].id };
+    return { answers, screen: ok ? saved.screen : SCREENS[0].id, lead: saved.lead ?? null };
   } catch {
     return fresh;
   }
@@ -68,6 +70,7 @@ function back() {
 
 function startOver() {
   if (preview) { location.href = location.pathname; return; }
+  lastResult = null;
   state = { answers: structuredClone(BLANK_ANSWERS), screen: SCREENS[0].id };
   go(state.screen);
 }
@@ -157,6 +160,7 @@ function body(screen, a) {
             <input type="email" data-key="email" value="${esc(a.email)}" autocomplete="email" inputmode="email" aria-describedby="email-error"></label>
           <label class="check"><input type="checkbox" data-key="newsletter" ${a.newsletter ? "checked" : ""}>
             <span>Sign up for news and updates</span></label>
+          <label class="hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
           <p class="error" id="email-error" role="alert" hidden></p>
           <div class="actions"><button type="submit" class="button">${esc(screen.submit)}</button></div>
         </form>`;
@@ -192,23 +196,59 @@ async function renderResults() {
     </section>`;
   try {
     catalogPromise ??= loadCatalog({ source: catalogSource });
-    const { catalog } = await catalogPromise;
+    const { catalog, source } = await catalogPromise;
     if (state.screen !== RESULTS) return;
     const res = recommend(catalog, toEngineAnswers(state.answers));
+    lastResult = { res, source };
     app.querySelector(".results").innerHTML = (preview ? `<p class="preview-banner">Preview of test household ${esc(preview.name)} · <a href="test.html">back to test page</a></p>` : "")
       + (preview ? "" : `<div class="topline"><button type="button" class="back" data-action="back"><span aria-hidden="true">←</span> Back</button></div>`)
       + resultsHTML(res, catalog, state.answers, { emailForm: emailFormHTML(), preview: !!preview });
+    if (!preview && state.lead && state.lead.status !== "saved") submitLead();
   } catch (e) {
     console.error(e);
     app.querySelector(".help").textContent = "Something went wrong loading the recommendations. Please call us at (434) 316-9622.";
   }
 }
 
+// ---------- lead capture ----------
+
+/** Save this completed questionnaire (and email the results if there's an address). Safe to call again: the
+    Apps Script updates the same row by lead ID and never emails the same lead twice. */
+async function submitLead() {
+  const lead = state.lead;
+  if (!lead || !lastResult || !canEmailResults()) return;
+  lead.status = "sending";
+  updateEmailStatus();
+  try {
+    const r = await sendLead(leadPayload({ leadId: lead.id, answers: state.answers, ...lastResult, honeypot }));
+    if (!r.ok) throw new Error(r.error || "not saved");
+    lead.status = "saved";
+    lead.emailed = r.emailed === true;
+  } catch (e) {
+    console.error("Lead not saved:", e);
+    lead.status = "failed";
+  }
+  save();
+  updateEmailStatus();
+}
+
+function emailStatusText() {
+  const { email } = state.answers, lead = state.lead;
+  if (!email || !canEmailResults() || !lead) return "";
+  if (lead.emailed) return `We've emailed these results to <strong>${esc(email)}</strong>.`;
+  if (lead.status === "sending" || lead.status === "pending") return `Sending these results to <strong>${esc(email)}</strong>…`;
+  return `We couldn't email your results just now. Use "Email us about this model" above or give us a call.`;
+}
+
+function updateEmailStatus() {
+  const el = document.getElementById("email-status");
+  if (el) el.innerHTML = emailStatusText();
+}
+
 // "Email these results to me", for shoppers who skipped the email on the last screen.
 function emailFormHTML() {
   const a = state.answers;
-  if (a.email && canEmailResults()) return `<p class="emailed">We're emailing these results to <strong>${esc(a.email)}</strong>.</p>`;
-  if (a.email) return "";
+  if (a.email) return canEmailResults() && !preview ? `<p class="emailed" id="email-status" role="status">${emailStatusText()}</p>` : "";
   return `<form class="email-results" data-action="email-results" novalidate>
       <h2>Email these results to me</h2>
       <div class="email-row">
@@ -291,6 +331,8 @@ app.addEventListener("submit", e => {
   a.email = a.email.trim();
   if (a.email && !EMAIL_RE.test(a.email)) return showContactError("That email address doesn't look right. Check it, or leave it blank.");
   if (a.newsletter && !a.email) return showContactError("Add your email to sign up for news and updates.");
+  honeypot = e.target.elements.website?.value ?? "";
+  state.lead = { id: newLeadId(), status: "pending", emailed: false };   // each completed questionnaire is its own lead
   save();
   go(RESULTS);
 });
@@ -306,11 +348,16 @@ function emailResults(form) {
     return;
   }
   input.setAttribute("aria-invalid", "false");
-  if (!canEmailResults()) {
-    msg.textContent = "Emailing results isn't switched on yet. Use \"Email us about this model\" or give us a call.";
+  if (!canEmailResults() || preview) {
+    msg.textContent = preview ? "Emails aren't sent from test previews." : "Emailing results isn't switched on yet. Use \"Email us about this model\" or give us a call.";
     return;
   }
-  // Phase 6: send the lead and results email here.
+  state.answers.email = email;
+  state.lead ??= { id: newLeadId(), status: "pending", emailed: false };
+  state.lead.status = "pending";
+  save();
+  form.outerHTML = emailFormHTML();
+  submitLead();
 }
 
 function showContactError(msg) {

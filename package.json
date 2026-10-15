@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/run-tests.mjs"
+    "test": "node tests/run-tests.mjs && node tests/apps-script.test.mjs"
   }
 }

@@ -136,22 +136,40 @@ export const BLANK_ANSWERS = {
 /** The screens this shopper will see, given their answers so far. */
 export const visibleScreens = answers => SCREENS.filter(s => !s.show || s.show(answers));
 
+// One screen's answer as plain text ("" when unanswered).
+function answerText(s, a) {
+  const label = v => s.options?.find(o => (o.value ?? o) === v)?.label ?? v;
+  if (s.type === "multi") return a[s.key].map(label).join(", ") || "None";
+  if (s.type === "slider") return String(a[s.key]);
+  if (s.type === "select") return a[s.key] === HEARD_OTHER && a[s.other.key].trim() ? `Other: ${a[s.other.key].trim()}` : (a[s.key] ?? "");
+  if (s.type === "text") return a[s.key].trim();
+  return a[s.key] === null ? "" : String(label(a[s.key]));
+}
+
 /** The shopper's answers as "Label: answer" lines, for emails. Skips screens they didn't see and blank answers. */
 export function describeAnswers(a) {
   const lines = [];
   for (const s of visibleScreens(a)) {
     if (!s.summary) continue;
-    const label = v => s.options?.find(o => (o.value ?? o) === v)?.label ?? v;
-    let text;
-    if (s.type === "multi") text = a[s.key].map(label).join(", ") || "None";
-    else if (s.type === "slider") text = String(a[s.key]);
-    else if (s.type === "select") text = a[s.key] === HEARD_OTHER && a[s.other.key].trim() ? `Other: ${a[s.other.key].trim()}` : a[s.key];
-    else if (s.type === "text") text = a[s.key].trim();
-    else text = a[s.key] === null ? "" : label(a[s.key]);
+    let text = answerText(s, a);
     if (s.notes && a[s.key] === s.notes.when && a[s.notes.key].trim()) text += ` (${a[s.notes.key].trim()})`;
     if (text) lines.push(`${s.summary}: ${text}`);
   }
   return lines;
+}
+
+export const LIFTING_NOTES = "Lifting notes";
+
+/** Every screen's answer keyed by its summary label, for the Leads sheet (screens they didn't see are blank). */
+export function leadFields(a) {
+  const shown = new Set(visibleScreens(a).map(s => s.id));
+  const out = {};
+  for (const s of SCREENS) {
+    if (!s.summary) continue;
+    out[s.summary] = shown.has(s.id) ? answerText(s, a) : "";
+    if (s.notes) out[LIFTING_NOTES] = shown.has(s.id) && a[s.key] === s.notes.when ? a[s.notes.key].trim() : "";
+  }
+  return out;
 }
 
 /** Shopper answers -> the engine's input (see engine.js). */

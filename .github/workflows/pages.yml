@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 22
       - run: node tests/run-tests.mjs
+      - run: node tests/apps-script.test.mjs
 
   deploy:
     needs: test

@@ -19,7 +19,9 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | `public/css/app.css` | Questionnaire layout, mobile first. |
 | `public/js/results.js` | Result cards: slot labels, badges, "Why it fits", caution notes, add-ons, Buy and "Email us about this model" links, and the conversation fallback. |
 | `public/js/shop.js` | Shop phone, address and hours shown on the results page. |
-| `public/js/lead.js` | Lead capture and results emails (Phase 6). |
+| `public/js/lead.js` | Sends each completed questionnaire to the Apps Script (`LEADS_URL`). |
+| `apps-script/` | The Google Apps Script that saves leads and sends the results and HOV emails. Setup steps in its README. |
+| `tests/apps-script.test.mjs` | Runs the Apps Script against stand-ins for Google's services. |
 | `public/js/engine.js` | The recommendation engine, ported line for line from the prototype. |
 | `public/js/catalog.js` | Loads the catalog from the Google Sheet, validates every row, and falls back to the repo copy on any problem. |
 | `public/js/sheet-config.js` | The Google Sheet's ID and tab names. The sheet must be shared as "Anyone with the link: Viewer". |
@@ -66,5 +68,5 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 3. **Catalog from the Google Sheet** ✓
 4. **Question screens** ✓
 5. **Results page** ✓
-6. Lead capture
+6. **Lead capture** ← current
 7. Embed and launch
