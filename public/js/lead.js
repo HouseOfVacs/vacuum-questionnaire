@@ -3,7 +3,7 @@
 import { leadFields } from "./questions.js";
 
 // The Apps Script web app URL (Deploy → Manage deployments → Web app URL). Empty = nothing is sent.
-export const LEADS_URL = "";
+export const LEADS_URL = "https://script.google.com/macros/s/AKfycbxUCwAMRjLg9klTDN9i8Q3OhNMc05PXJBBt1zDfnOx0Ns5Jodjx0Wh38GYNTClB3j7ajg/exec";
 
 export const canEmailResults = () => !!LEADS_URL;
 
