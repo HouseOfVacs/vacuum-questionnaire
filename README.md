@@ -10,7 +10,7 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | --- | --- |
 | `public/` | The site that gets deployed. Everything in here is public. |
 | `public/data/` | Fallback copy of the catalog (Models, Add-ons, Settings tabs as CSV). Used when the Google Sheet can't be reached or fails validation. |
-| `docs/` | The build spec. |
+| `docs/` | The build spec, the Squarespace embed snippet (`squarespace-embed.html`), the launch checklist and the product photo links. |
 | `reference/` | The approved Python prototype of the recommendation logic and the starter catalog workbook. |
 | `scripts/export_catalog.py` | Regenerates `public/data/*.csv` from the workbook. |
 | `public/index.html`, `public/js/app.js` | The questionnaire: one question per screen, progress bar, Back, answers saved in the browser. |
@@ -69,4 +69,4 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 4. **Question screens** ✓
 5. **Results page** ✓
 6. **Lead capture** ✓
-7. Embed and launch
+7. **Embed and launch** ← current: see `docs/launch-checklist.md`

@@ -51,7 +51,7 @@ function go(id, { focus = true } = {}) {
   state.screen = id;
   save();
   render();
-  window.scrollTo(0, 0);
+  scrollToTop();
   if (focus) app.querySelector("h1")?.focus({ preventScroll: true });
 }
 
@@ -367,6 +367,25 @@ function showContactError(msg) {
   el.hidden = !msg;
   app.querySelector('[data-key="email"]')?.setAttribute("aria-invalid", msg ? "true" : "false");
   if (msg) app.querySelector('[data-key="email"]')?.focus();
+}
+
+// ---------- embedding (Squarespace iframe; see docs/squarespace-embed.html) ----------
+
+const embedded = window.self !== window.top;
+const toParent = msg => window.parent.postMessage({ source: "hov-vrq", ...msg }, "*");   // height/scroll only, nothing private
+
+function scrollToTop() {
+  if (embedded) toParent({ type: "scrollTop" });   // the iframe has no scrollbar; ask the page to bring its top into view
+  else window.scrollTo(0, 0);
+}
+
+if (embedded) {
+  document.documentElement.classList.add("embedded");
+  let lastHeight = 0;
+  new ResizeObserver(() => {
+    const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+    if (height !== lastHeight) toParent({ type: "height", height: (lastHeight = height) });
+  }).observe(document.documentElement);
 }
 
 render();

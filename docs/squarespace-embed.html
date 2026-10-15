@@ -1,0 +1,38 @@
+<!--
+  Vacuum Recommendation Questionnaire: Squarespace embed.
+  Paste everything below into a Code Block on the /vacuum-questionnaire page (Code Block → HTML, "Display Source" off).
+  The iframe grows to fit each screen, so the page never shows a second scrollbar, and each new question
+  scrolls the page back to the top of the questionnaire. Store links open in the same window.
+-->
+<div id="hov-vrq-wrap">
+  <iframe id="hov-vrq" src="https://houseofvacs.github.io/vacuum-questionnaire/"
+    title="Vacuum Recommendation Questionnaire" loading="eager" scrolling="no"
+    style="display:block;width:100%;height:720px;border:0;background:transparent;overflow:hidden"
+    allowtransparency="true"></iframe>
+  <noscript>
+    <p><a href="https://houseofvacs.github.io/vacuum-questionnaire/">Open the Vacuum Recommendation Questionnaire</a></p>
+  </noscript>
+</div>
+<script>
+  (function () {
+    var APP_ORIGIN = "https://houseofvacs.github.io";
+    var frame = document.getElementById("hov-vrq");
+    function headerOffset() {
+      var h = document.getElementById("header") || document.querySelector("header");
+      if (!h) return 16;
+      var pos = getComputedStyle(h).position;
+      return (pos === "fixed" || pos === "sticky" ? h.getBoundingClientRect().bottom : 0) + 16;
+    }
+    window.addEventListener("message", function (e) {
+      if (e.origin !== APP_ORIGIN || !e.data || e.data.source !== "hov-vrq") return;
+      if (e.data.type === "height" && e.data.height > 0) frame.style.height = e.data.height + "px";
+      if (e.data.type === "scrollTop") {
+        var top = frame.getBoundingClientRect().top;
+        var off = headerOffset();
+        if (top < off || top > window.innerHeight * 0.5) {
+          window.scrollTo({ top: window.pageYOffset + top - off, behavior: "smooth" });
+        }
+      }
+    });
+  })();
+</script>

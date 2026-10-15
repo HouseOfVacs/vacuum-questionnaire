@@ -264,6 +264,10 @@ a.button { display: inline-flex; align-items: center; justify-content: center; t
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* inside the Squarespace page: let the page's own background show and drop the outer padding */
+.embedded body { background: transparent; }
+.embedded #app { padding-top: 8px; padding-bottom: 16px; }
+
 @media (min-width: 560px) {
   .card { display: grid; grid-template-columns: 200px 1fr; }
   .card-head { grid-column: 1 / -1; }
