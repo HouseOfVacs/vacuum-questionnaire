@@ -7,7 +7,7 @@ export const HEARD_OTHER = "Other";
 
 export const SCREENS = [
   {
-    id: "styles", type: "multi", key: "styles", required: true,
+    id: "styles", type: "multi", key: "styles", required: true, summary: "Styles",
     question: "Which styles would you consider?", help: "Select all that apply.",
     options: [
       { value: "upright", label: "Upright" },
@@ -17,7 +17,7 @@ export const SCREENS = [
     ],
   },
   {
-    id: "cordless_role", type: "single", key: "cordless_role",
+    id: "cordless_role", type: "single", key: "cordless_role", summary: "Cordless for",
     show: a => a.styles.includes("cordless"),
     question: "What would the cordless be for?",
     options: [
@@ -26,7 +26,7 @@ export const SCREENS = [
     ],
   },
   {
-    id: "mix", type: "single", key: "mix",
+    id: "mix", type: "single", key: "mix", summary: "Carpet vs. bare floor",
     question: "How much of your home is carpet vs. bare floor?",
     options: [
       { value: "carpet", label: "Mostly carpet" },
@@ -36,13 +36,13 @@ export const SCREENS = [
     ],
   },
   {
-    id: "floors", type: "multi", key: "floors", required: false,
+    id: "floors", type: "multi", key: "floors", required: false, summary: "Bare floors",
     question: "What kind of bare floor do you have?", help: "Select all that apply.",
     options: ["Linoleum", "Vinyl Plank", "Tile", "Brick", "Finished Concrete", "Unfinished Concrete",
       "Hardwood", "Laminate Hardwood", "Bamboo"].map(v => ({ value: v, label: v })),
   },
   {
-    id: "carpets", type: "multi", key: "carpets", required: true,
+    id: "carpets", type: "multi", key: "carpets", required: true, summary: "Carpet and rugs",
     show: a => a.mix !== "none",
     question: "What kind of carpet or rugs do you have?", help: "Select all that apply.",
     options: [
@@ -61,7 +61,7 @@ export const SCREENS = [
     ],
   },
   {
-    id: "pets", type: "single", key: "pets",
+    id: "pets", type: "single", key: "pets", summary: "Pets",
     question: "Do you have pets and how much do they shed?",
     options: [
       { value: "none", label: "No pets" },
@@ -71,7 +71,7 @@ export const SCREENS = [
     ],
   },
   {
-    id: "freq", type: "single", key: "freq",
+    id: "freq", type: "single", key: "freq", summary: "I vacuum",
     question: "I vacuum…",
     options: [
       { value: "daily", label: "All the time, at least daily" },
@@ -81,7 +81,7 @@ export const SCREENS = [
     ],
   },
   {
-    id: "stairs", type: "single", key: "stairs",
+    id: "stairs", type: "single", key: "stairs", summary: "Stairs",
     question: "Do you have stairs?",
     options: [
       { value: "no", label: "No" },
@@ -90,30 +90,30 @@ export const SCREENS = [
     ],
   },
   {
-    id: "allergies", type: "single", key: "allergies",
+    id: "allergies", type: "single", key: "allergies", summary: "Allergies or asthma",
     question: "Does anyone in your household have allergies or asthma?", help: "Can be seasonal or not.",
     options: [{ value: true, label: "Yes" }, { value: false, label: "No" }],
   },
   {
-    id: "slider", type: "slider", key: "slider", min: 1, max: 5,
+    id: "slider", type: "slider", key: "slider", min: 1, max: 5, summary: "Lighter (1) to deepest clean (5)",
     question: "What matters more to you?",
     ends: ["Lighter and easier", "Deepest clean"],
   },
   {
     // "Yes" opens an optional notes box with a Next button; "No" advances straight away.
-    id: "limit", type: "single", key: "limit",
+    id: "limit", type: "single", key: "limit", summary: "Trouble lifting or pushing",
     question: "Does anyone who'll use it have trouble lifting or pushing a full-size vacuum?",
     options: [{ value: true, label: "Yes" }, { value: false, label: "No" }],
     notes: { key: "limit_notes", when: true, label: "Anything we should know? (optional)", placeholder: "For example: arthritis in my hands, or a bad back" },
   },
   {
-    id: "current", type: "text", key: "current_vacuum",
+    id: "current", type: "text", key: "current_vacuum", summary: "Current vacuum",
     question: "What vacuum do you have now? What do you like or dislike about it?",
     help: "Optional. This gives us context for your recommendation.",
     placeholder: "For example: an old Kenmore canister. Great suction, but the hose is heavy.",
   },
   {
-    id: "heard", type: "select", key: "heard", required: true,
+    id: "heard", type: "select", key: "heard", required: true, summary: "Heard about us",
     question: "How did you hear about us?",
     options: ["Family/Friends", "YouTube", "Google (Search)", "Reddit", "AI (Claude, Gemini, ChatGPT, etc.)",
       "Social media (Instagram, Facebook, TikTok)", "Physical Ad", HEARD_OTHER],
@@ -135,6 +135,24 @@ export const BLANK_ANSWERS = {
 
 /** The screens this shopper will see, given their answers so far. */
 export const visibleScreens = answers => SCREENS.filter(s => !s.show || s.show(answers));
+
+/** The shopper's answers as "Label: answer" lines, for emails. Skips screens they didn't see and blank answers. */
+export function describeAnswers(a) {
+  const lines = [];
+  for (const s of visibleScreens(a)) {
+    if (!s.summary) continue;
+    const label = v => s.options?.find(o => (o.value ?? o) === v)?.label ?? v;
+    let text;
+    if (s.type === "multi") text = a[s.key].map(label).join(", ") || "None";
+    else if (s.type === "slider") text = String(a[s.key]);
+    else if (s.type === "select") text = a[s.key] === HEARD_OTHER && a[s.other.key].trim() ? `Other: ${a[s.other.key].trim()}` : a[s.key];
+    else if (s.type === "text") text = a[s.key].trim();
+    else text = a[s.key] === null ? "" : label(a[s.key]);
+    if (s.notes && a[s.key] === s.notes.when && a[s.notes.key].trim()) text += ` (${a[s.notes.key].trim()})`;
+    if (text) lines.push(`${s.summary}: ${text}`);
+  }
+  return lines;
+}
 
 /** Shopper answers -> the engine's input (see engine.js). */
 export function toEngineAnswers(a) {

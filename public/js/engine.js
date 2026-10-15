@@ -41,7 +41,7 @@ function bestOf(cands, tieWindow) {
  *            mix: "carpet"|"half"|"bare"|"none", floors: [...], carpets: [...],
  *            pets: "none"|"low"|"moderate"|"heavy", freq: "daily"|"several"|"weekly"|"less",
  *            stairs: "no"|"carpeted"|"bare", allergies: bool, slider: 1..5, limit: bool }
- * returns { picks, fallback, pool }
+ * returns { picks, fallback, pool, weights, need }
  */
 export function recommend(catalog, a) {
   const { models, addons: ADDONS, settings: S } = catalog;
@@ -129,5 +129,7 @@ export function recommend(catalog, a) {
     if (cands.length) out.push({ ...bestOf(cands, S.tieWindow), slot: "Corded alternative", best_match: false });
   }
   const fallback = out.filter(o => o.slot !== "Corded alternative").length < 2;
-  return { picks: out, fallback, pool };
+  // weights and need are not in the prototype's return value; the results page uses them for "Why it fits"
+  const weights = { carpet: cw, bare: bw, pet: pw, stairs: sw, ease: ew };
+  return { picks: out, fallback, pool, weights, need };
 }

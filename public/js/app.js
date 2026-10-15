@@ -2,6 +2,9 @@
 import { BLANK_ANSWERS, HEARD_OTHER, SCREENS, toEngineAnswers, visibleScreens } from "./questions.js";
 import { loadCatalog } from "./catalog.js";
 import { recommend } from "./engine.js";
+import { resultsHTML } from "./results.js";
+import { canEmailResults } from "./lead.js";
+import { HOUSEHOLDS } from "./households.js";
 
 const STORE_KEY = "hov-questionnaire-v1";
 const ADVANCE_DELAY_MS = 180;          // lets the tapped pill show as selected before the next screen
@@ -9,7 +12,13 @@ const RESULTS = "results";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const app = document.getElementById("app");
-let state = restore();
+// ?household=A shows that test household's results without touching the shopper's saved answers (linked from test.html)
+const params = new URLSearchParams(location.search);
+const preview = HOUSEHOLDS.find(h => h.name.startsWith((params.get("household") || "-").toUpperCase() + "."));
+const catalogSource = params.get("source") === "repo" ? "repo" : undefined;   // ?source=repo skips the Google Sheet
+let state = preview
+  ? { answers: { ...structuredClone(BLANK_ANSWERS), ...structuredClone(preview.answers) }, screen: RESULTS }
+  : restore();
 let catalogPromise = null;
 
 // ---------- saved answers ----------
@@ -28,6 +37,7 @@ function restore() {
 }
 
 function save() {
+  if (preview) return;
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* private mode: answers just won't persist */ }
 }
 
@@ -57,6 +67,7 @@ function back() {
 }
 
 function startOver() {
+  if (preview) { location.href = location.pathname; return; }
   state = { answers: structuredClone(BLANK_ANSWERS), screen: SCREENS[0].id };
   go(state.screen);
 }
@@ -64,7 +75,6 @@ function startOver() {
 // ---------- rendering ----------
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const money = p => "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function canContinue(screen, a) {
   switch (screen.type) {
@@ -174,31 +184,40 @@ function render() {
     </section>`;
 }
 
-// Temporary results view for Phase 4; Phase 5 replaces it with the full result cards.
 async function renderResults() {
-  app.innerHTML = `<section class="screen">
+  app.innerHTML = `<section class="screen results">
       <div class="topline"><button type="button" class="back" data-action="back"><span aria-hidden="true">←</span> Back</button></div>
       <h1 class="question" tabindex="-1">Your recommendations</h1>
-      <p class="help" id="results-status">Finding the best fit for your home…</p>
-      <ol class="preview" id="results-list"></ol>
-      <p><button type="button" class="link" data-action="restart">Start over</button></p>
+      <p class="help">Finding the best fit for your home…</p>
     </section>`;
   try {
-    catalogPromise ??= loadCatalog();
+    catalogPromise ??= loadCatalog({ source: catalogSource });
     const { catalog } = await catalogPromise;
-    const res = recommend(catalog, toEngineAnswers(state.answers));
     if (state.screen !== RESULTS) return;
-    document.getElementById("results-status").textContent = res.fallback
-      ? "This one's worth a conversation. Email us or call (434) 316-9622 and we'll help you choose."
-      : "Full result cards with Buy links are coming in the next build step.";
-    document.getElementById("results-list").innerHTML = res.picks.map(p => `<li>
-        <strong>${esc(p.slot)}${p.best_match ? " · Best match for your home" : ""}</strong><br>
-        ${esc(p.brand)} ${esc(p.name)} · ${money(p.price)}
-        ${p.addons.map(x => `<br>+ ${esc(x.name)}`).join("")}</li>`).join("");
+    const res = recommend(catalog, toEngineAnswers(state.answers));
+    app.querySelector(".results").innerHTML = (preview ? `<p class="preview-banner">Preview of test household ${esc(preview.name)} · <a href="test.html">back to test page</a></p>` : "")
+      + (preview ? "" : `<div class="topline"><button type="button" class="back" data-action="back"><span aria-hidden="true">←</span> Back</button></div>`)
+      + resultsHTML(res, catalog, state.answers, { emailForm: emailFormHTML(), preview: !!preview });
   } catch (e) {
     console.error(e);
-    document.getElementById("results-status").textContent = "Something went wrong loading the recommendations. Please call us at (434) 316-9622.";
+    app.querySelector(".help").textContent = "Something went wrong loading the recommendations. Please call us at (434) 316-9622.";
   }
+}
+
+// "Email these results to me", for shoppers who skipped the email on the last screen.
+function emailFormHTML() {
+  const a = state.answers;
+  if (a.email && canEmailResults()) return `<p class="emailed">We're emailing these results to <strong>${esc(a.email)}</strong>.</p>`;
+  if (a.email) return "";
+  return `<form class="email-results" data-action="email-results" novalidate>
+      <h2>Email these results to me</h2>
+      <div class="email-row">
+        <label class="field"><span class="visually-hidden">Email</span>
+          <input type="email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" aria-describedby="email-results-msg"></label>
+        <button type="submit" class="button">send</button>
+      </div>
+      <p class="form-msg" id="email-results-msg" role="status"></p>
+    </form>`;
 }
 
 // ---------- events ----------
@@ -267,6 +286,7 @@ app.addEventListener("change", e => {
 
 app.addEventListener("submit", e => {
   e.preventDefault();
+  if (e.target.dataset.action === "email-results") return emailResults(e.target);
   const a = state.answers;
   a.email = a.email.trim();
   if (a.email && !EMAIL_RE.test(a.email)) return showContactError("That email address doesn't look right. Check it, or leave it blank.");
@@ -274,6 +294,24 @@ app.addEventListener("submit", e => {
   save();
   go(RESULTS);
 });
+
+function emailResults(form) {
+  const input = form.elements.email;
+  const msg = form.querySelector(".form-msg");
+  const email = input.value.trim();
+  if (!EMAIL_RE.test(email)) {
+    input.setAttribute("aria-invalid", "true");
+    msg.textContent = "That email address doesn't look right.";
+    input.focus();
+    return;
+  }
+  input.setAttribute("aria-invalid", "false");
+  if (!canEmailResults()) {
+    msg.textContent = "Emailing results isn't switched on yet. Use \"Email us about this model\" or give us a call.";
+    return;
+  }
+  // Phase 6: send the lead and results email here.
+}
 
 function showContactError(msg) {
   const el = document.getElementById("email-error");

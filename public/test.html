@@ -97,6 +97,7 @@
       const ok = !problems.length;
       return `<section class="card">
         <div class="head"><h2>${esc(h.name)}</h2><span class="tag ${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</span></div>
+        <p class="summary"><a href="./?household=${h.name[0]}">See this household's results page →</a></p>
         <p class="summary muted">${esc(h.summary)}</p>
         ${res.fallback ? `<p><strong>Fallback:</strong> this one's worth a conversation</p>` : ""}
         <div class="scroll"><table><thead><tr><th>Slot</th><th>Model</th><th>Price</th><th>Fit</th><th>Add-ons / cautions</th></tr></thead>

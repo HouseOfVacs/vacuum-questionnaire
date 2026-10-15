@@ -17,6 +17,9 @@ The full plan is in [docs/Vacuum_Recommendation_Questionnaire_Build_Spec.md](doc
 | `public/js/questions.js` | The 13 screens, their options, skip rules, and how answers map to the engine. Edit here to reword a question. |
 | `public/css/theme.css` | The site's colors and fonts as CSS variables (taken from thehouseofvacs.com). |
 | `public/css/app.css` | Questionnaire layout, mobile first. |
+| `public/js/results.js` | Result cards: slot labels, badges, "Why it fits", caution notes, add-ons, Buy and "Email us about this model" links, and the conversation fallback. |
+| `public/js/shop.js` | Shop phone, address and hours shown on the results page. |
+| `public/js/lead.js` | Lead capture and results emails (Phase 6). |
 | `public/js/engine.js` | The recommendation engine, ported line for line from the prototype. |
 | `public/js/catalog.js` | Loads the catalog from the Google Sheet, validates every row, and falls back to the repo copy on any problem. |
 | `public/js/sheet-config.js` | The Google Sheet's ID and tab names. The sheet must be shared as "Anyone with the link: Viewer". |
@@ -46,7 +49,7 @@ Or serve the site locally and open http://localhost:8787/test.html:
 python3 -m http.server 8787 --directory public
 ```
 
-Live: https://houseofvacs.github.io/vacuum-questionnaire/test.html
+Live: https://houseofvacs.github.io/vacuum-questionnaire/test.html. Each household links to its results page (`/?household=A`). Add `&source=repo` to any page to use the repo copy instead of the Google Sheet.
 
 ## Running the reference prototype
 
@@ -62,6 +65,6 @@ It prints the seven approved test households. The JavaScript engine must reprodu
 2. **Recommendation engine** + `/test.html` ✓
 3. **Catalog from the Google Sheet** ✓
 4. **Question screens** ✓
-5. Results page
+5. **Results page** ← current
 6. Lead capture
 7. Embed and launch

@@ -16,6 +16,10 @@
   --on-plum: #ffffff;
   --selected: var(--plum);                 /* selected pill: clear contrast change (spec) */
   --on-selected: #ffffff;
+  --card: #ffffff;                         /* result cards and product photo backdrop */
+  --line: rgba(30, 47, 62, 0.15);          /* card borders and dividers */
+  --card-head: rgba(226, 208, 202, 0.45);  /* card header strip */
+  --caution-bg: #f6ecd9;                   /* caution notes */
   --error: #a3312b;
   --focus: #2f6f9f;
 
